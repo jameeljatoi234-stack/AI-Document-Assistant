@@ -30,6 +30,11 @@ st.set_page_config(
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 GROQ_MODEL = "openai/gpt-oss-20b"
 
+SUPPORTED_EXTENSIONS = {
+    ".pdf", ".docx", ".txt", ".md",
+    ".pptx", ".xlsx", ".xls", ".csv"
+}
+
 # Common words that usually add little value to keyword search.
 STOP_WORDS = {
     "a", "an", "and", "are", "as", "at", "be", "by", "for", "from",
