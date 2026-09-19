@@ -27,11 +27,6 @@ st.set_page_config(
     layout="wide",
 )
 
-uploaded_files = st.file_uploader(
-    "Upload PDF, Word, PowerPoint, Excel, TXT or MD files",
-    type=["pdf", "docx", "txt", "md", "pptx", "xlsx", "xls", "csv"],
-    accept_multiple_files=True,
-)
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 GROQ_MODEL = "openai/gpt-oss-20b"
 
