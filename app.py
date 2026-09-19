@@ -14,7 +14,9 @@ from docx import Document
 from groq import Groq
 from pypdf import PdfReader
 from sentence_transformers import SentenceTransformer
-
+from pptx import Presentation
+from openpyxl import load_workbook
+import xlrd
 
 # ----------------------------
 # App configuration
@@ -25,7 +27,11 @@ st.set_page_config(
     layout="wide",
 )
 
-SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt", ".md"}
+uploaded_files = st.file_uploader(
+    "Upload PDF, Word, PowerPoint, Excel, TXT or MD files",
+    type=["pdf", "docx", "txt", "md", "pptx", "xlsx", "xls", "csv"],
+    accept_multiple_files=True,
+)
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 GROQ_MODEL = "openai/gpt-oss-20b"
 
@@ -105,7 +111,83 @@ def extract_txt(file_bytes, filename):
 def extract_md(file_bytes, filename):
     """Extract Markdown as plain text."""
     return extract_txt(file_bytes, filename)
+    
+def extract_pptx(file_bytes, filename):
+    presentation = Presentation(io.BytesIO(file_bytes))
+    records = []
 
+    for slide_no, slide in enumerate(presentation.slides, 1):
+        text = "\n".join(
+            shape.text for shape in slide.shapes
+            if hasattr(shape, "text") and shape.text.strip()
+        )
+
+        if text.strip():
+            records.append({
+                "filename": filename,
+                "page": slide_no,
+                "text": text
+            })
+
+    return records
+
+
+def extract_xlsx(file_bytes, filename):
+    workbook = load_workbook(
+        io.BytesIO(file_bytes),
+        read_only=True,
+        data_only=True
+    )
+
+    records = []
+
+    for sheet in workbook.worksheets:
+        rows = []
+
+        for row in sheet.iter_rows(values_only=True):
+            values = [str(v) for v in row if v is not None]
+            if values:
+                rows.append(" | ".join(values))
+
+        if rows:
+            records.append({
+                "filename": filename,
+                "page": None,
+                "text": f"Sheet: {sheet.title}\n" + "\n".join(rows)
+            })
+
+    return records
+
+
+def extract_xls(file_bytes, filename):
+    workbook = xlrd.open_workbook(file_contents=file_bytes)
+    records = []
+
+    for sheet in workbook.sheets():
+        rows = []
+
+        for r in range(sheet.nrows):
+            values = [
+                str(sheet.cell_value(r, c))
+                for c in range(sheet.ncols)
+                if sheet.cell_value(r, c) != ""
+            ]
+
+            if values:
+                rows.append(" | ".join(values))
+
+        if rows:
+            records.append({
+                "filename": filename,
+                "page": None,
+                "text": f"Sheet: {sheet.name}\n" + "\n".join(rows)
+            })
+
+    return records
+
+
+def extract_csv(file_bytes, filename):
+    return extract_txt(file_bytes, filename)
 
 def extract_file(file_bytes, filename):
     """Route a supported file to the correct extraction function."""
@@ -119,6 +201,17 @@ def extract_file(file_bytes, filename):
         return extract_txt(file_bytes, filename)
     if extension == ".md":
         return extract_md(file_bytes, filename)
+    if extension == ".pptx":
+        return extract_pptx(file_bytes, filename)
+
+    if extension == ".xlsx":
+        return extract_xlsx(file_bytes, filename)
+
+    if extension == ".xls":
+        return extract_xls(file_bytes, filename)
+
+    if extension == ".csv":
+        return extract_csv(file_bytes, filename)
 
     raise ValueError(f"Unsupported file type: {extension}")
 
