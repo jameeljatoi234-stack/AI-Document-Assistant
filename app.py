@@ -634,10 +634,10 @@ with st.sidebar:
     st.header("1. Add documents")
 
     uploaded_files = st.file_uploader(
-        "Upload PDF, DOCX, TXT or MD files",
-        type=["pdf", "docx", "txt", "md"],
-        accept_multiple_files=True,
-    )
+    "Upload PDF, Word, PowerPoint, Excel, TXT or MD files",
+    type=["pdf", "docx", "txt", "md", "pptx", "xlsx", "xls", "csv"],
+    accept_multiple_files=True,
+)
 
     st.markdown("**OR**")
 
